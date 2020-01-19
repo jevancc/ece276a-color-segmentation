@@ -43,6 +43,46 @@ class SimpleHSVRedClassifier(Classifier):
         return mask
 
 
+class EigenFaceClassifier(MLClassifier):
+
+    def __init__(self, epsilon=0.01):
+        self._epsilon = epsilon
+
+    def fit(self, X):
+        self._n_trainX = X.shape[0]
+        self._trainX = X.reshape(self._n_trainX, -1).T
+        self._trainX_mean = np.mean(self._trainX, axis=1).reshape(-1, 1)
+
+        self._compute_principle_components()
+
+    def _compute_principle_components(self):
+        A = self._trainX - self._trainX_mean
+        u, s, vh = np.linalg.svd(A, full_matrices=False)
+        self.principle_components = u
+        self.singular_values = s**2
+
+    def predict(self, X, n_pcs=None, return_distance=False):
+        # Eigenface recognition: https://en.wikipedia.org/wiki/Eigenface#Use_in_facial_recognition
+        rX = self.construct(X, n_pcs=n_pcs)
+        distance = np.sum((X - rX)**2, axis=1)
+        if return_distance:
+            return distance < self._epsilon, distance
+        else:
+            return distance < self._epsilon
+
+    def construct(self, X, n_pcs=None):
+        if n_pcs == None:
+            n_pcs = self.principle_components.shape[-1]
+
+        X = X.T
+        X = X - self._trainX_mean
+
+        u = self.principle_components[:, :n_pcs]
+        w = u.T @ X
+        recon = u @ w + self._trainX_mean
+        return recon.T
+
+
 class SSBBoxDeterministic(Classifier):
 
     def __init__(self, image_area):
