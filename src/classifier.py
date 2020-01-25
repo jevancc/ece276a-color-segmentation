@@ -15,12 +15,15 @@ class Classifier(metaclass=abc.ABCMeta):
 class MLClassifier(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def fit(self, X):
+    def fit(self, X, y):
         return NotImplemented
 
     @abc.abstractmethod
     def predict(self, X):
         return NotImplemented
+
+    def score(self, X, y):
+        return np.sum(self.predict(X) != y) / len(y)
 
     def save(self, path):
         with open(filename, 'w') as f:
