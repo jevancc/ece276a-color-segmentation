@@ -46,6 +46,28 @@ class SimpleHSVRedClassifier(Classifier):
         return mask
 
 
+class LogisticRegression(MLClassifier):
+
+    def __init__(self, learning_rate=0.01, max_iter=1000):
+        self.lr = learning_rate
+        self.max_iter = max_iter
+
+    def sigmoid(self, z):
+        return 1.0 / (1.0 + np.exp(-z))
+
+    def fit(self, X, y):
+        assert len(np.unique(y)) == 2
+        n_dims = X.shape[1]
+
+        self.w = np.random.randn(n_dims).reshape(1, -1) / n_dims
+        for _ in range(self.max_iter):
+            h = self.sigmoid(X @ self.w.T)
+            self.w = self.w - self.lr * (X.T @ (h - y.reshape(-1, 1))).T
+
+    def predict(self, X):
+        return (X @ self.w.T >= 0).astype(int).reshape(-1)
+
+
 class EigenFaceClassifier(MLClassifier):
 
     def __init__(self, epsilon=0.01):
