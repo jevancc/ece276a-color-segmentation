@@ -59,13 +59,38 @@ class LogisticRegression(MLClassifier):
         assert len(np.unique(y)) == 2
         n_dims = X.shape[1]
 
-        self.w = np.random.randn(n_dims).reshape(1, -1) / n_dims
+        self.w = np.random.randn(1, n_dims) / n_dims
         for _ in range(self.max_iter):
             h = self.sigmoid(X @ self.w.T)
             self.w = self.w - self.lr * (X.T @ (h - y.reshape(-1, 1))).T
 
     def predict(self, X):
         return (X @ self.w.T >= 0).astype(int).reshape(-1)
+
+
+class KaryLogisticRegression(MLClassifier):
+
+    def __init__(self, learning_rate=0.01, max_iter=1000):
+        self.lr = learning_rate
+        self.max_iter = max_iter
+
+    def softmax(self, z):
+        e_z = np.exp(z - np.max(z, axis=1, keepdims=True))
+        return e_z / e_z.sum(axis=1, keepdims=True)
+
+    def fit(self, X, y):
+        assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        n_dims = X.shape[1]
+        n_classes = len(np.unique(y))
+        e = np.eye(n_classes)
+
+        self.w = np.random.randn(n_classes, n_dims) / n_dims
+        for _ in range(self.max_iter):
+            self.w = self.w + self.lr * (
+                (e[y, :] - self.softmax(X @ self.w.T)).T @ X)
+
+    def predict(self, X):
+        return np.argmax(X @ self.w.T, axis=1).astype(int).reshape(-1)
 
 
 class EigenFaceClassifier(MLClassifier):
