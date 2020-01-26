@@ -1,4 +1,5 @@
 import abc
+import math
 import pickle
 import cv2
 import numpy as np
@@ -91,6 +92,46 @@ class KaryLogisticRegression(MLClassifier):
 
     def predict(self, X):
         return np.argmax(X @ self.w.T, axis=1).astype(int).reshape(-1)
+
+
+class GaussianNaiveBayes(MLClassifier):
+    _LOG_2PI = np.log(2 * math.pi)
+
+    def __init__(self):
+        pass
+
+    def log_multivariate_normal_pdf(self, x, avg, cov):
+        dim = self.n_dims
+        dev = x - avg
+        maha = np.diag(dev @ np.linalg.pinv(cov) @ dev.T)
+        return -0.5 * (dim * GaussianNaiveBayes._LOG_2PI +
+                       np.log(np.linalg.det(cov)) + maha)
+
+    def fit(self, X, y):
+        assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        n_data = X.shape[0]
+        n_dims = X.shape[1]
+        n_classes = len(np.unique(y))
+        self.n_dims = n_dims
+        self.n_classes = n_classes
+
+        self.w = np.zeros((n_classes))
+        self.avg = np.zeros((n_classes, 1, n_dims))
+        self.cov = np.zeros((n_classes, n_dims, n_dims))
+
+        for k in range(n_classes):
+            Xk = X[y == k, :]
+            n_data_k = Xk.shape[0]
+
+            self.w[k] = n_data_k / n_data
+            self.avg[k, :, :] = np.mean(Xk, axis=0, keepdims=True)
+            self.cov[k, :, :] = np.cov(Xk.T)
+
+    def predict(self, X):
+        return np.argmax(np.array([
+            np.log(self.w[k]) + self.log_multivariate_normal_pdf(X, self.avg[k], self.cov[k]) \
+            for k in range(self.n_classes)
+        ]), axis=0)
 
 
 class EigenFaceClassifier(MLClassifier):
