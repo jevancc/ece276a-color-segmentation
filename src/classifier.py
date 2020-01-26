@@ -69,6 +69,39 @@ class LogisticRegression(MLClassifier):
         return (X @ self.w.T >= 0).astype(int).reshape(-1)
 
 
+class OneVsAllLogisticRegression(MLClassifier):
+
+    def __init__(self, learning_rate=0.01, max_iter=1000):
+        self.lr = learning_rate
+        self.max_iter = max_iter
+
+    def sigmoid(self, z):
+        return 1.0 / (1.0 + np.exp(-z))
+
+    def fit(self, X, y):
+        assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        n_data = X.shape[0]
+        n_dims = X.shape[1]
+        n_classes = len(np.unique(y))
+
+        self.n_dims = n_dims
+        self.n_classes = n_classes
+
+        self.w = np.zeros((n_classes, 1, n_dims))
+        for k in range(n_classes):
+            wk = np.random.randn(1, n_dims) / n_dims
+            yk = (y == k).astype(int).reshape(-1, 1)
+            for _ in range(self.max_iter):
+                h = self.sigmoid(X @ wk.T)
+                wk = wk - self.lr * (X.T @ (h - yk)).T
+            self.w[k] = wk
+
+    def predict(self, X):
+        return np.argmax(np.hstack(
+            [X @ self.w[k].T for k in range(self.n_classes)]),
+                         axis=1).astype(int).reshape(-1)
+
+
 class KaryLogisticRegression(MLClassifier):
 
     def __init__(self, learning_rate=0.01, max_iter=1000):
