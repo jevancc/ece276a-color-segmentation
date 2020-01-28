@@ -1,25 +1,29 @@
 import abc
 import math
 import pickle
+import copy
 import cv2
 import numpy as np
 import detector
 
 
-class Classifier(metaclass=abc.ABCMeta):
+class Classifier:
 
-    @abc.abstractmethod
     def predict(self, X):
         return NotImplemented
 
 
-class MLClassifier(metaclass=abc.ABCMeta):
+try:
+    from sklearn.base import BaseEstimator
+except:
+    BaseEstimator = Classifier
 
-    @abc.abstractmethod
+
+class MLClassifier(BaseEstimator):
+
     def fit(self, X, y):
         return NotImplemented
 
-    @abc.abstractmethod
     def predict(self, X):
         return NotImplemented
 
@@ -50,20 +54,21 @@ class SimpleHSVRedClassifier(Classifier):
 class LogisticRegression(MLClassifier):
 
     def __init__(self, learning_rate=0.01, max_iter=1000):
-        self.lr = learning_rate
+        self.learning_rate = learning_rate
         self.max_iter = max_iter
 
     def sigmoid(self, z):
         return 1.0 / (1.0 + np.exp(-z))
 
     def fit(self, X, y):
-        assert len(np.unique(y)) == 2
+        assert len(np.unique(y)) == 2, str(np.unique(y))
         n_dims = X.shape[1]
 
         self.w = np.random.randn(1, n_dims) / n_dims
         for _ in range(self.max_iter):
             h = self.sigmoid(X @ self.w.T)
-            self.w = self.w - self.lr * (X.T @ (h - y.reshape(-1, 1))).T
+            self.w = self.w - self.learning_rate * (
+                X.T @ (h - y.reshape(-1, 1))).T
 
     def predict(self, X):
         return (X @ self.w.T >= 0).astype(int).reshape(-1)
@@ -72,7 +77,7 @@ class LogisticRegression(MLClassifier):
 class OneVsAllLogisticRegression(MLClassifier):
 
     def __init__(self, learning_rate=0.01, max_iter=1000):
-        self.lr = learning_rate
+        self.learning_rate = learning_rate
         self.max_iter = max_iter
 
     def sigmoid(self, z):
@@ -93,7 +98,7 @@ class OneVsAllLogisticRegression(MLClassifier):
             yk = (y == k).astype(int).reshape(-1, 1)
             for _ in range(self.max_iter):
                 h = self.sigmoid(X @ wk.T)
-                wk = wk - self.lr * (X.T @ (h - yk)).T
+                wk = wk - self.learning_rate * (X.T @ (h - yk)).T
             self.w[k] = wk
 
     def predict(self, X):
@@ -105,7 +110,7 @@ class OneVsAllLogisticRegression(MLClassifier):
 class KaryLogisticRegression(MLClassifier):
 
     def __init__(self, learning_rate=0.01, max_iter=1000):
-        self.lr = learning_rate
+        self.learning_rate = learning_rate
         self.max_iter = max_iter
 
     def softmax(self, z):
@@ -120,7 +125,7 @@ class KaryLogisticRegression(MLClassifier):
 
         self.w = np.random.randn(n_classes, n_dims) / n_dims
         for _ in range(self.max_iter):
-            self.w = self.w + self.lr * (
+            self.w = self.w + self.learning_rate * (
                 (e[y, :] - self.softmax(X @ self.w.T)).T @ X)
 
     def predict(self, X):
@@ -141,7 +146,8 @@ class GaussianNaiveBayes(MLClassifier):
                        np.log(np.linalg.det(cov)) + maha)
 
     def fit(self, X, y):
-        assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y), str(
+            np.unique(y)) + str(X.shape)
         n_data = X.shape[0]
         n_dims = X.shape[1]
         n_classes = len(np.unique(y))
@@ -170,7 +176,7 @@ class GaussianNaiveBayes(MLClassifier):
 class EigenFaceClassifier(MLClassifier):
 
     def __init__(self, epsilon=0.01):
-        self._epsilon = epsilon
+        self.epsilon = epsilon
 
     def fit(self, X):
         self._n_trainX = X.shape[0]
@@ -190,9 +196,9 @@ class EigenFaceClassifier(MLClassifier):
         rX = self.construct(X, n_pcs=n_pcs)
         distance = np.sum((X - rX)**2, axis=1)
         if return_distance:
-            return distance < self._epsilon, distance
+            return distance < self.epsilon, distance
         else:
-            return distance < self._epsilon
+            return distance < self.epsilon
 
     def construct(self, X, n_pcs=None):
         if n_pcs == None:
