@@ -141,7 +141,7 @@ class GaussianNaiveBayes(MLClassifier):
     def log_multivariate_normal_pdf(self, x, avg, cov):
         dim = self.n_dims
         dev = x - avg
-        maha = np.diag(dev @ np.linalg.pinv(cov) @ dev.T)
+        maha = np.sum((dev @ np.linalg.pinv(cov)) * dev, axis=1)
         return -0.5 * (dim * GaussianNaiveBayes._LOG_2PI +
                        np.log(np.linalg.det(cov)) + maha)
 
