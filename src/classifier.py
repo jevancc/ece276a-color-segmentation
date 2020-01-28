@@ -7,6 +7,17 @@ import numpy as np
 import detector
 
 
+def minibatches(X, y, batchsize, shuffle=True):
+    assert X.shape[0] == y.shape[0]
+    indices = np.arange(X.shape[0])
+    if shuffle:
+        np.random.shuffle(indices)
+
+    for i in range(0, X.shape[0], batchsize):
+        excerpt = indices[i:i + batchsize]
+        yield X[excerpt], y[excerpt]
+
+
 class Classifier:
 
     def predict(self, X):
@@ -53,8 +64,9 @@ class SimpleHSVRedClassifier(Classifier):
 
 class LogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000):
+    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
         self.learning_rate = learning_rate
+        self.batchsize = batchsize
         self.max_iter = max_iter
 
     def sigmoid(self, z):
@@ -62,13 +74,15 @@ class LogisticRegression(MLClassifier):
 
     def fit(self, X, y):
         assert len(np.unique(y)) == 2, str(np.unique(y))
+        batchsize = self.batchsize if self.batchsize is not None else X.shape[0]
         n_dims = X.shape[1]
 
         self.w = np.random.randn(1, n_dims) / n_dims
         for _ in range(self.max_iter):
-            h = self.sigmoid(X @ self.w.T)
-            self.w = self.w - self.learning_rate * (
-                X.T @ (h - y.reshape(-1, 1))).T
+            for Xb, yb in minibatches(X, y, batchsize, shuffle=True):
+                h = self.sigmoid(Xb @ self.w.T)
+                self.w = self.w - self.learning_rate * (
+                    Xb.T @ (h - yb.reshape(-1, 1))).T
 
     def predict(self, X):
         return (X @ self.w.T >= 0).astype(int).reshape(-1)
@@ -76,8 +90,9 @@ class LogisticRegression(MLClassifier):
 
 class OneVsAllLogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000):
+    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
         self.learning_rate = learning_rate
+        self.batchsize = batchsize
         self.max_iter = max_iter
 
     def sigmoid(self, z):
@@ -85,6 +100,7 @@ class OneVsAllLogisticRegression(MLClassifier):
 
     def fit(self, X, y):
         assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        batchsize = self.batchsize if self.batchsize is not None else X.shape[0]
         n_data = X.shape[0]
         n_dims = X.shape[1]
         n_classes = len(np.unique(y))
@@ -97,8 +113,9 @@ class OneVsAllLogisticRegression(MLClassifier):
             wk = np.random.randn(1, n_dims) / n_dims
             yk = (y == k).astype(int).reshape(-1, 1)
             for _ in range(self.max_iter):
-                h = self.sigmoid(X @ wk.T)
-                wk = wk - self.learning_rate * (X.T @ (h - yk)).T
+                for Xb, yb in minibatches(X, yk, batchsize, shuffle=True):
+                    h = self.sigmoid(Xb @ wk.T)
+                    wk = wk - self.learning_rate * (Xb.T @ (h - yb)).T
             self.w[k] = wk
 
     def predict(self, X):
@@ -109,8 +126,9 @@ class OneVsAllLogisticRegression(MLClassifier):
 
 class KaryLogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000):
+    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
         self.learning_rate = learning_rate
+        self.batchsize = batchsize
         self.max_iter = max_iter
 
     def softmax(self, z):
@@ -119,14 +137,16 @@ class KaryLogisticRegression(MLClassifier):
 
     def fit(self, X, y):
         assert np.min(y) == 0 and len(np.unique(y)) - 1 == np.max(y)
+        batchsize = self.batchsize if self.batchsize is not None else X.shape[0]
         n_dims = X.shape[1]
         n_classes = len(np.unique(y))
         e = np.eye(n_classes)
 
         self.w = np.random.randn(n_classes, n_dims) / n_dims
         for _ in range(self.max_iter):
-            self.w = self.w + self.learning_rate * (
-                (e[y, :] - self.softmax(X @ self.w.T)).T @ X)
+            for Xb, yb in minibatches(X, y, batchsize, shuffle=True):
+                self.w = self.w + self.learning_rate * (
+                    (e[yb, :] - self.softmax(Xb @ self.w.T)).T @ Xb)
 
     def predict(self, X):
         return np.argmax(X @ self.w.T, axis=1).astype(int).reshape(-1)
