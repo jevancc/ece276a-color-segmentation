@@ -64,10 +64,15 @@ class SimpleHSVRedClassifier(Classifier):
 
 class LogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
+    def __init__(self,
+                 learning_rate=0.01,
+                 max_iter=1000,
+                 batchsize=None,
+                 tol=1e-4):
         self.learning_rate = learning_rate
-        self.batchsize = batchsize
         self.max_iter = max_iter
+        self.batchsize = batchsize
+        self.tol = tol
 
     def sigmoid(self, z):
         return 1.0 / (1.0 + np.exp(-z))
@@ -79,10 +84,13 @@ class LogisticRegression(MLClassifier):
 
         self.w = np.random.randn(1, n_dims) / n_dims
         for _ in range(self.max_iter):
+            w_prev = self.w
             for Xb, yb in minibatches(X, y, batchsize, shuffle=True):
                 h = self.sigmoid(Xb @ self.w.T)
                 self.w = self.w - self.learning_rate * (
                     Xb.T @ (h - yb.reshape(-1, 1))).T
+            if np.linalg.norm(w_prev - self.w) < self.tol:
+                break
 
     def predict(self, X):
         return (X @ self.w.T >= 0).astype(int).reshape(-1)
@@ -90,10 +98,15 @@ class LogisticRegression(MLClassifier):
 
 class OneVsAllLogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
+    def __init__(self,
+                 learning_rate=0.01,
+                 max_iter=1000,
+                 batchsize=None,
+                 tol=1e-4):
         self.learning_rate = learning_rate
-        self.batchsize = batchsize
         self.max_iter = max_iter
+        self.batchsize = batchsize
+        self.tol = tol
 
     def sigmoid(self, z):
         return 1.0 / (1.0 + np.exp(-z))
@@ -113,9 +126,13 @@ class OneVsAllLogisticRegression(MLClassifier):
             wk = np.random.randn(1, n_dims) / n_dims
             yk = (y == k).astype(int).reshape(-1, 1)
             for _ in range(self.max_iter):
+                wk_prev = wk
                 for Xb, yb in minibatches(X, yk, batchsize, shuffle=True):
                     h = self.sigmoid(Xb @ wk.T)
                     wk = wk - self.learning_rate * (Xb.T @ (h - yb)).T
+                if np.linalg.norm(wk_prev - wk) < self.tol:
+                    break
+
             self.w[k] = wk
 
     def predict(self, X):
@@ -126,10 +143,15 @@ class OneVsAllLogisticRegression(MLClassifier):
 
 class KaryLogisticRegression(MLClassifier):
 
-    def __init__(self, learning_rate=0.01, max_iter=1000, batchsize=None):
+    def __init__(self,
+                 learning_rate=0.01,
+                 max_iter=1000,
+                 batchsize=None,
+                 tol=1e-4):
         self.learning_rate = learning_rate
-        self.batchsize = batchsize
         self.max_iter = max_iter
+        self.batchsize = batchsize
+        self.tol = tol
 
     def softmax(self, z):
         e_z = np.exp(z - np.max(z, axis=1, keepdims=True))
@@ -144,9 +166,12 @@ class KaryLogisticRegression(MLClassifier):
 
         self.w = np.random.randn(n_classes, n_dims) / n_dims
         for _ in range(self.max_iter):
+            w_prev = self.w
             for Xb, yb in minibatches(X, y, batchsize, shuffle=True):
                 self.w = self.w + self.learning_rate * (
                     (e[yb, :] - self.softmax(Xb @ self.w.T)).T @ Xb)
+            if np.linalg.norm(w_prev - self.w) < self.tol:
+                break
 
     def predict(self, X):
         return np.argmax(X @ self.w.T, axis=1).astype(int).reshape(-1)
