@@ -277,21 +277,22 @@ class SSBBoxDeterministic(Classifier):
                 return False
 
             for contour in detector.Contour.find(region.padded_image(10)):
-                if contour.area > self._image_area * 0.001 and contour.area > region.bbox_area * 0.5:
+                if contour.area > self._image_area * 0.001 and contour.area > region.bbox_area * 0.2:
                     if not (region.image[region.image != 0].sum() >
-                            contour.area * 0.6):
+                            contour.area * 0.4):
                         return False
 
                     approx_polygon = contour.approx_polygon()
                     n_edges = approx_polygon.n_edges
 
-                    if 7 <= n_edges < 16:
+                    if 7 <= n_edges <= 16:
                         degs = approx_polygon.angles_deg * 2
                         continuous_degs_sums = [
-                            sum(degs[i:i + 4]) % 360 for i in range(n_edges)
+                            sum(degs[i:i + 4]) for i in range(n_edges)
                         ]
+
                         n_valid_partial_octagon = sum([
-                            160 < v < 200 or 160 < (v + 180) % 360 < 200
+                            160 < v % 360 < 200 or 160 < (v + 180) % 360 < 200
                             for v in continuous_degs_sums
                         ])
                         if (n_valid_partial_octagon >= 2 and n_edges <= 12) \
