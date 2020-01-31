@@ -276,16 +276,20 @@ class SSBBoxDeterministic(Classifier):
             if max(lc, lr) - min(lc, lr) > 1.2 * min(lc, lr):
                 return False
 
-            for contour in detector.Contour.find(region.padded_image(10)):
+            region_cvx_img = np.pad(region.convex_image,
+                                    10,
+                                    'constant',
+                                    constant_values=0)
+            for contour in detector.Contour.find(region_cvx_img):
                 if contour.area > self._image_area * 0.001 and contour.area > region.bbox_area * 0.2:
-                    if not (region.image[region.image != 0].sum() >
-                            contour.area * 0.4):
-                        return False
+                    # if not (region.image[region.image != 0].sum() >
+                    #         contour.area * 0.4):
+                    #     return False
 
                     approx_polygon = contour.approx_polygon()
                     n_edges = approx_polygon.n_edges
 
-                    if 7 <= n_edges <= 16:
+                    if 7 <= n_edges <= 10:
                         degs = approx_polygon.angles_deg * 2
                         continuous_degs_sums = [
                             sum(degs[i:i + 4]) for i in range(n_edges)
