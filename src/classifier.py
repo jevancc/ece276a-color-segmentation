@@ -42,11 +42,11 @@ class MLClassifier(BaseEstimator):
         return np.sum(self.predict(X) != y) / len(y)
 
     def save(self, path):
-        with open(filename, 'w') as f:
+        with open(path, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
-    def load(self):
-        with open(filename, 'rb') as f:
+    def load(self, path):
+        with open(path, 'rb') as f:
             self.__dict__.update(pickle.load(f))
 
 
