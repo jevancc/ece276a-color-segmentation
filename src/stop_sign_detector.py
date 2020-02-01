@@ -64,6 +64,7 @@ class StopSignDetector():
         ssclf = classifier.SSBBoxDeterministic(oimg.area)
         img_mask_label = np.zeros((oimg.nr, oimg.nc))
 
+        img = oimg
         img_mask_normal = self.segment_image(img)
         img_mask_label_normal = label(img_mask_normal, connectivity=1)
         for region in detector.Region.find(img_mask_label_normal):
@@ -71,9 +72,10 @@ class StopSignDetector():
                 minr, minc, maxr, maxc = region.bbox
                 img_mask_label[minr:maxr, minc:maxc] += region.convex_image
 
-
         img = oimg.ycrcb
         img = img.histogram_equalize(channel_id=0, vmin=0, vmax=255)
+        histeq_img = img
+
         img_mask_boost = self.segment_image(img)
         img_mask_label_boost = label(img_mask_boost, connectivity=1)
         for region in detector.Region.find(img_mask_label_boost):
@@ -81,8 +83,8 @@ class StopSignDetector():
                 minr, minc, maxr, maxc = region.bbox
                 img_mask_label[minr:maxr, minc:maxc] += region.convex_image
 
-        for sr, vr in [[1.1, 1.1], [1.3, 1.3], [1.5, 1.5], [2.3, 1.2]]:
-            img = oimg.hsv
+        for sr, vr in [[1.1, 1.1], [2.3, 1.2]]:
+            img = histeq_img.hsv
             img = img.mulclip(factor=sr, channel_id=1, vmin=0, vmax=255)
             img = img.mulclip(factor=vr, channel_id=2, vmin=0, vmax=255)
 
@@ -108,6 +110,7 @@ class StopSignDetector():
                     boxes.append([minx, miny, maxx, maxy])
 
         return boxes
+
 
 import matplotlib.pyplot as plt
 if __name__ == '__main__':
