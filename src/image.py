@@ -3,6 +3,22 @@ import numpy as np
 from enum import Enum, auto
 from copy import deepcopy
 
+
+def build_histogram_equalizer(channel, vmax):
+    nvals = channel.size
+    vcnt = {v: cnt for v, cnt in zip(*np.unique(channel, return_counts=True))}
+    cumulative_sum = np.zeros((vmax + 1))
+    for i in range(vmax + 1):
+        cumulative_sum[i] = cumulative_sum[i - 1] + vcnt.get(i, 0)
+
+    cumulative_sum = np.round(cumulative_sum / nvals * vmax)
+
+    def f(val):
+        return cumulative_sum[val]
+
+    return f
+
+
 class Image:
     COLOR_SPACES = ['RGB', 'BGR', 'YCrCb', 'HSV', 'GRAY']
 
@@ -34,8 +50,12 @@ class Image:
         if self._colorspace == to:
             return self.copy()
 
-        data = cv2.cvtColor(self._data,
-                            cv2.__dict__[f'COLOR_{self._colorspace}2{to}'])
+        data = self._data
+        if f'COLOR_{self._colorspace}2{to}' in cv2.__dict__:
+            data = cv2.cvtColor(data, cv2.__dict__[f'COLOR_{self._colorspace}2{to}'])
+        else:
+            data = cv2.cvtColor(data, cv2.__dict__[f'COLOR_{self._colorspace}2RGB'])
+            data = cv2.cvtColor(data, cv2.__dict__[f'COLOR_RGB2{to}'])
         return Image(data, to)
 
     @property
@@ -58,33 +78,14 @@ class Image:
     def gray(self):
         return self.change_colorspace('GRAY')
 
-    def build_histogram_equalizer(self, vmin=0, vmax=255, channel_id=None):
-        if channel_id is None:
-            channel = self._data
-        else:
-            channel = self._data[:, :, channel_id]
-
-        nvals = channel.size
-        vcnt = {
-            v: cnt for v, cnt in zip(*np.unique(channel, return_counts=True))
-        }
-        cumulative_sum = np.zeros((vmax + 1))
-        for i in range(vmax + 1):
-            cumulative_sum[i] = cumulative_sum[i - 1] + vcnt.get(i, 0)
-
-        cumulative_sum = np.round(cumulative_sum / nvals * vmax)
-
-        def f(val):
-            return cumulative_sum[val]
-
-        return f
-
     def histogram_equalize(self, vmin=0, vmax=255, channel_id=None):
-        equalizer = self.build_histogram_equalizer(channel_id, vmax)
 
         if channel_id is None:
+            equalizer = build_histogram_equalizer(self._data[:, :], vmax)
             newimg = equalizer(self._data[:, :]).astype(np.uint8)
         else:
+            equalizer = build_histogram_equalizer(self._data[:, :, channel_id],
+                                                  vmax)
             newimg = self._data.copy()
             newimg[:, :, channel_id] = equalizer(
                 newimg[:, :, channel_id]).astype(np.uint8)
