@@ -34,15 +34,15 @@ def prompt_is_ok(msg):
 
 for color, roi_color in COLORS:
     is_ok = False
-    if not prompt_is_ok(f"Do you want to label color {color}? [y/n]: "):
+    if not prompt_is_ok(f'Do you want to label color {color}? [y/n]: '):
         color_pixels[color] = np.array([])
         continue
 
     while not is_ok:
-        print(f"Labeling color {color} ...")
+        print(f'Labeling color {color} ...')
         fig = plt.figure()
-        plt.imshow(img, interpolation='nearest', cmap="Greys")
-        plt.title(f"Add ROI for Color:{color}")
+        plt.imshow(img, interpolation='nearest', cmap='Greys')
+        plt.title(f'Add ROI for Color:{color}')
 
         multiroi = MultiRoi(color_cycle=(roi_color,))
 
@@ -55,9 +55,9 @@ for color, roi_color in COLORS:
         masked_img[tmask == 0, :] = 0
         plt.imshow(masked_img)
         plt.show()
-        is_ok = prompt_is_ok(f"Is color {color} labeled correctly? [y/n]: ")
+        is_ok = prompt_is_ok(f'Is color {color} labeled correctly? [y/n]: ')
         if not is_ok:
-            print(f"Please label color {color} again.")
+            print(f'Please label color {color} again.')
         else:
             rois.extend(multiroi.rois.values())
             pixels = img[tmask != 0, :].reshape(-1, 3)
@@ -65,15 +65,15 @@ for color, roi_color in COLORS:
 
 data = {**color_pixels}
 
-if prompt_is_ok(f"Do you want to label stop signs region? [y/n]: "):
+if prompt_is_ok(f'Do you want to label stop signs region? [y/n]: '):
     is_ok = False
     while not is_ok:
-        print(f"Labeling stop signs ...")
+        print(f'Labeling stop signs ...')
         fig = plt.figure()
-        plt.imshow(img, interpolation='nearest', cmap="Greys")
-        plt.title(f"Add ROI for stop signs")
+        plt.imshow(img, interpolation='nearest', cmap='Greys')
+        plt.title(f'Add ROI for stop signs')
 
-        multiroi = MultiRoi(color_cycle=("g",))
+        multiroi = MultiRoi(color_cycle=('g',))
 
         tmask = np.zeros(img.shape[:-1])
         for name, roi in multiroi.rois.items():
@@ -84,9 +84,9 @@ if prompt_is_ok(f"Do you want to label stop signs region? [y/n]: "):
         masked_img[tmask == 0, :] = 0
         plt.imshow(masked_img)
         plt.show()
-        is_ok = prompt_is_ok(f"Are stop signs labeled correctly? [y/n]: ")
+        is_ok = prompt_is_ok(f'Are stop signs labeled correctly? [y/n]: ')
         if not is_ok:
-            print(f"Please label stop signs again.")
+            print(f'Please label stop signs again.')
         else:
             rois.extend(multiroi.rois.values())
             tmask[tmask != 0] = 1
@@ -103,8 +103,8 @@ plt.imshow(img)
 for roi in rois:
     roi.display_roi()
 plt.axis('off')
-plt.savefig(f"{img_name}-roi.png", bbox_inches='tight')
+plt.savefig(f'{img_name}-roi.png', bbox_inches='tight')
 plt.title('Labeling Result')
 plt.show()
 
-np.savez(f"{img_name}.npz", **data)
+np.savez(f'{img_name}.npz', **data)

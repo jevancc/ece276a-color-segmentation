@@ -10,7 +10,7 @@ def _cached(f):
 
     @wraps(f)
     def wrapper(obj):
-        if not hasattr(obj, "_cache"):
+        if not hasattr(obj, '_cache'):
             obj._cache = {}
 
         cache = obj._cache
@@ -25,7 +25,7 @@ def _cached(f):
 
 
 def _pad_with(vector, pad_width, iaxis, kwargs):
-    pad_value = kwargs.get("padder", 10)
+    pad_value = kwargs.get('padder', 10)
     vector[:pad_width[0]] = pad_value
     vector[-pad_width[1]:] = pad_value
 
@@ -75,7 +75,7 @@ class Region:
         return getattr(self._data, name)
 
     def __dir__(self):
-        return dir(self._data) + ["find", "find_labeled", "padded_imag"]
+        return dir(self._data) + ['find', 'find_labeled', 'padded_imag']
 
 class Contour:
 
@@ -174,23 +174,23 @@ class Ploygon:
         curve = self._curve
 
         if len(curve) == 3:
-            return "triangle"
+            return 'triangle'
         elif len(curve) == 4:
             (x, y, w, h) = cv2.boundingRect(curve)
             ar = w / float(h)
-            return "square" if ar >= 0.95 and ar <= 1.05 else "rectangle"
+            return 'square' if ar >= 0.95 and ar <= 1.05 else 'rectangle'
         elif len(curve) == 5:
-            return "pentagon"
+            return 'pentagon'
         elif len(curve) == 6:
-            return "hexagon"
+            return 'hexagon'
         elif len(curve) == 7:
-            return "heptagon"
+            return 'heptagon'
         elif len(curve) == 8:
-            return "octagon"
+            return 'octagon'
         elif len(curve) == 9:
-            return "decagon"
+            return 'decagon'
         else:
-            return "circle"
+            return 'circle'
 
     @property
     def numpy(self):

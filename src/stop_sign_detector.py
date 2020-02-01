@@ -22,7 +22,7 @@ class StopSignDetector():
 		e.g., parameters of your classifier
 		'''
         self.clf = classifier.GaussianNaiveBayes()
-        self.clf.load("./gnb_300000_histeq.pic")
+        self.clf.load('./gnb_300000_histeq.pic')
 
     def segment_image(self, img):
         '''
@@ -116,7 +116,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     my_detector = StopSignDetector()
 
-    # folder = "trainset"
+    # folder = 'trainset'
     # files = [os.path.join(folder, filename) for filename in os.listdir(folder)]
     files = ['../trainset/0.jpg']
     for filename in files:
