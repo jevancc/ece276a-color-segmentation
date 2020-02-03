@@ -4,7 +4,7 @@ Stop Sign Detector
 '''
 
 import os, cv2
-from skimage.morphology import binary_dilation
+from skimage.morphology import binary_dilation, closing
 from skimage.measure import label, regionprops
 import classifier
 import detector
@@ -22,7 +22,7 @@ class StopSignDetector():
 		e.g., parameters of your classifier
 		'''
         self.clf = classifier.GaussianNaiveBayes()
-        self.clf.load('./gnb_300000_histeq.pic')
+        self.clf.load('./gnb.pic')
 
     def segment_image(self, img):
         '''
@@ -64,6 +64,9 @@ class StopSignDetector():
         ssclf = classifier.SSBBoxDeterministic(oimg.area)
         img_mask_label = np.zeros((oimg.nr, oimg.nc))
 
+        # N-way merge
+
+        # 1 - Normal Image
         img = oimg
         img_mask_normal = self.segment_image(img)
         img_mask_label_normal = label(img_mask_normal, connectivity=1)
@@ -72,6 +75,8 @@ class StopSignDetector():
                 minr, minc, maxr, maxc = region.bbox
                 img_mask_label[minr:maxr, minc:maxc] += region.convex_image
 
+
+        # 2 - Brightness Equalization
         img = oimg.ycrcb
         img = img.histogram_equalize(channel_id=0, vmin=0, vmax=255)
         histeq_img = img
@@ -83,6 +88,7 @@ class StopSignDetector():
                 minr, minc, maxr, maxc = region.bbox
                 img_mask_label[minr:maxr, minc:maxc] += region.convex_image
 
+        # 3, 4 - Saturation Enhancement
         for sr, vr in [[1.1, 1.1], [2.3, 1.2]]:
             img = histeq_img.hsv
             img = img.mulclip(factor=sr, channel_id=1, vmin=0, vmax=255)
@@ -95,6 +101,7 @@ class StopSignDetector():
                     minr, minc, maxr, maxc = region.bbox
                     img_mask_label[minr:maxr, minc:maxc] += region.convex_image
 
+        # Merge step
         boxes = []
         img_mask_label = (img_mask_label != 0).astype(int)
         img_mask_label = label(img_mask_label, connectivity=1)
