@@ -267,39 +267,36 @@ class SSBBoxDeterministic(Classifier):
         return self._predict_region(region)
 
     def _predict_region(self, region):
-        if region.area >= 100:
+        minr, minc, maxr, maxc = region.bbox
+        lr = maxr - minr
+        lc = maxc - minc
 
-            minr, minc, maxr, maxc = region.bbox
-            lr = maxr - minr
-            lc = maxc - minc
+        if max(lc, lr) - min(lc, lr) > 1.5 * min(lc, lr):
+            return False
 
-            if max(lc, lr) - min(lc, lr) > 1.2 * min(lc, lr):
-                return False
+        region_cvx_img = np.pad(region.convex_image,
+                                10,
+                                'constant',
+                                constant_values=0)
+        for contour in detector.Contour.find(region_cvx_img):
+            if contour.area > self._image_area * 0.001 and contour.area > region.bbox_area * 0.2:
+                # if not (region.image[region.image != 0].sum() >
+                #         contour.area * 0.4):
+                #     return False
 
-            region_cvx_img = np.pad(region.convex_image,
-                                    10,
-                                    'constant',
-                                    constant_values=0)
-            for contour in detector.Contour.find(region_cvx_img):
-                if contour.area > self._image_area * 0.001 and contour.area > region.bbox_area * 0.2:
-                    # if not (region.image[region.image != 0].sum() >
-                    #         contour.area * 0.4):
-                    #     return False
+                approx_polygon = contour.approx_polygon()
+                n_edges = approx_polygon.n_edges
 
-                    approx_polygon = contour.approx_polygon()
-                    n_edges = approx_polygon.n_edges
+                if 7 <= n_edges <= 10:
+                    degs = approx_polygon.angles_deg * 2
+                    continuous_degs_sums = [
+                        sum(degs[i:i + 4]) for i in range(n_edges)
+                    ]
 
-                    if 7 <= n_edges <= 10:
-                        degs = approx_polygon.angles_deg * 2
-                        continuous_degs_sums = [
-                            sum(degs[i:i + 4]) for i in range(n_edges)
-                        ]
-
-                        n_valid_partial_octagon = sum([
-                            160 < v % 360 < 200 or 160 < (v + 180) % 360 < 200
-                            for v in continuous_degs_sums
-                        ])
-                        if (n_valid_partial_octagon >= 2 and n_edges <= 12) \
-                            or (n_valid_partial_octagon >= 3 and n_edges <= 16):
-                            return True
+                    n_valid_partial_octagon = sum([
+                        160 < v % 360 < 200 or 160 < (v + 180) % 360 < 200
+                        for v in continuous_degs_sums
+                    ])
+                    if n_valid_partial_octagon >= 2:
+                        return True
         return False
