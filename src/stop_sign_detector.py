@@ -22,7 +22,7 @@ class StopSignDetector():
 		e.g., parameters of your classifier
 		'''
         self.clf = classifier.GaussianNaiveBayes()
-        self.clf.load('./gnb.pic')
+        self.clf.load('./naivebayes_pixel_classifier.pic')
 
     def segment_image(self, img):
         '''
