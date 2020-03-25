@@ -21,8 +21,8 @@ Stop sign detection | Color segmentation
 ![](images/7-box.png)|![](images/7-seg.png)
 
 ## Implementations:
-Source files:
-- src/classifier.py: Classes for classification purpose. The classifiers are:
+### Source files
+- **src/classifier.py**: Classes for classification purpose. The classifiers are:
     - MLClassifier: a basic class for all machine learning classifier. Classes inherit it must implement two functions: fit(X, y) and predict(X). fit(X, y) is used to train the model and predict(X) for testing. The design of APIs are same as sklearn estimator.
     - SimpleHSVRedClassifier: a deterministic classifier. Simply classify pixel color by checking if values of channel H, S, V lies in a certain range.
     - LogisticRegression: logistic regression MLClassifier
@@ -31,23 +31,29 @@ Source files:
     - GaussianNaiveBayes: Gaussian naive Bayes MLClassifier
     - SSBBoxDeterministic: bounding box classifier which implemented the stop sign detection algorithm in the report.
 
-- src/detector.py: Classes for detecting properties of an image. Most of them are wrappers for opencv and skimage functions.
+- **src/detector.py**: Classes for detecting properties of an image. Most of them are wrappers for opencv and skimage functions.
     - Region: find bounding boxes from labeled regions. Wrapper of skimage.measure.regionprops
     - Contour: find contours from an image. Wrapper of cv2.findContours
     - Polygon: approximated edges, corner angles, and shape of polygon given a curve. Wrapper of cv2.approxPolyDP
 
-- src/image.py: Class for image loading and processing
+- **src/image.py**: Class for image loading and processing
     - Image: A wrapper of image numpy array. It is used to easily convert color space, perform histogram equalization, and color enhancement. A wrapper of several cv2 function related to image loading and processing
 
-- src/stop_sign_detector.py: The entry file for the stop sign detector
+- **src/stop_sign_detector.py**: The entry file for the stop sign detector
     - StopSignDetector: The entry class of color segmentation and stop sign detection.
 
-- tools/labeltool.py: Data labeling tool. You can run this tool with command "python labeltool.py -i \<file>".
+### Tools
+- **tools/labeltool.py**: Data labeling tool. You can run this tool with command "python labeltool.py -i \<file>".
 
-Notebooks:
-- pixel-learning-<feature>-<number_of_classes>.ipynb: experiments for supervised learning algorithms performance on different training data.
-- pixel-learning.ipynb: for generating machine learning models for testing data and submission.
-- experiment-detection.ipynb: visualize segmentation and detection result. For generating detection and segmentation results for testing data.
+### Notebooks
+- **pixel-learning-<feature>-<number_of_classes>.ipynb**: experiments for supervised learning algorithms performance on different training data.
+- **pixel-learning.ipynb**: for generating machine learning models for testing data and submission.
+- **experiment-detection.ipynb**: visualize segmentation and detection result. For generating detection and segmentation results for testing data.
+
+## Training data
+[Download raw data from UCSD ECE276A 2020 PR1](https://drive.google.com/file/d/1KzNsAjYDBHYAbfSTvO7BLo_gWL1keHcG/view?usp=sharing)
+
+[Download labeled data](https://drive.google.com/file/d/1i4N6dfm6yMu9B6YW4sn6oFuywj9gMl9O/view?usp=sharing)
 
 ## References
 * [UCSD ECE276A: Sensing & Estimation in Robotics](https://natanaso.github.io/ece276a/)
