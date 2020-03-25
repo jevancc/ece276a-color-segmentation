@@ -1,7 +1,7 @@
 # Color Segmentation and Stop Sign Detection
 This is the project 1 of the course UCSD ECE276A: Sensing & Estimation in Robotics.
 
-![](images/3-box.png)
+<img src="images/3-box.png" height="400">
 
 Traffic sign detection is an essential part of autonomous driving, which has been researched for a few decades. Much research has been conducted with a front camera installed in front of the vehicle sensing the environment in real-time. The goal of traffic sign detection is to design a visual model to localize and classify traffic signs in an image. It requires the ability to robustly model invariance to brightness, occlusions, and other variations in the environment.
 
